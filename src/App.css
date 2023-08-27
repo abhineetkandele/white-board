@@ -40,7 +40,7 @@
 }
 
 .tools.selected {
-  background-color: #afceec;
+  background-color: #99c8ff;
 }
 
 .seprator.verticle {
@@ -112,7 +112,7 @@
   content: ' ';
   height: 1rem;
   width: 1rem;
-  background-color: #afceec;
+  background-color: #99c8ff;
   border-radius: 50%;
   display: inline-block;
   transform: translate(-0.1rem, -0.3rem);
@@ -121,7 +121,7 @@
 }
 
 .toggle input:checked ~ label {
-  background-color: #afceec;
+  background-color: #99c8ff;
 }
 
 .toggle input:checked ~ label:after {

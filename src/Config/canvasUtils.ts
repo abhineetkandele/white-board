@@ -82,6 +82,7 @@ export const drawRectangle = (
     context.strokeRect(x1, y1, x2 - x1, y2 - y1);
   } else {
     context.fillRect(x1, y1, x2 - x1, y2 - y1);
+    context.strokeRect(x1, y1, x2 - x1, y2 - y1);
   }
 };
 
@@ -93,5 +94,41 @@ export const drawShape = (
     context.stroke();
   } else {
     context.fill();
+    context.stroke();
+  }
+};
+
+export const drawText = (
+  contextRef: React.MutableRefObject<
+    CanvasRenderingContext2D | null | undefined
+  >,
+  textRef: React.MutableRefObject<
+    | {
+        text: string;
+        x: number;
+        y: number;
+        textArea: HTMLTextAreaElement | null;
+      }
+    | undefined
+  >,
+  width: string,
+  color: string,
+  isDrawing: { current: boolean } | undefined
+) => {
+  if (textRef.current?.textArea) {
+    const { text, x, y, textArea } = textRef.current;
+    textArea?.remove();
+
+    const ctx = contextRef.current!;
+    if (text) {
+      ctx.font = `${
+        +width * 6
+      }px LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif`;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+
+      textRef.current.text = "";
+      isDrawing!.current = false;
+    }
   }
 };

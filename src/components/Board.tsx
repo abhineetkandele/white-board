@@ -7,6 +7,7 @@ import {
   drawDiamond,
   drawRectangle,
   drawShape,
+  drawText,
   drawTriangle,
 } from "../Config/canvasUtils";
 
@@ -32,6 +33,12 @@ const Board = () => {
     width: number;
     height: number;
   }>();
+  const textRef = useRef<{
+    text: string;
+    x: number;
+    y: number;
+    textArea: HTMLTextAreaElement | null;
+  }>();
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -41,7 +48,10 @@ const Board = () => {
     canvas.width = canvas?.offsetWidth * ratio;
     canvas.height = canvas?.offsetHeight * ratio;
 
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const ctx = canvas.getContext("2d", {
+      willReadFrequently: true, // When we want to read data frequently
+      desynchronized: true,
+    })!;
     ctx.scale(ratio, ratio);
     contextRef.current = ctx;
 
@@ -67,7 +77,7 @@ const Board = () => {
         const imgHeight = img.naturalHeight;
 
         const aspectRatio = imgWidth / imgHeight;
-        const width = 100;
+        const width = 200;
         const height = width / aspectRatio;
 
         imageDataRef.current = {
@@ -96,6 +106,7 @@ const Board = () => {
       link.href = canvas.toDataURL();
       link.click();
       resetSelection();
+      link.remove();
     } else if (selectedTool === "Add Image") {
       input = document.createElement("input");
       input.type = "file";
@@ -104,6 +115,7 @@ const Board = () => {
 
       input.addEventListener("change", loadImage);
       input.addEventListener("cancel", resetSelection);
+      input.remove();
     }
 
     return () => {
@@ -112,24 +124,97 @@ const Board = () => {
     };
   }, [selectedTool, setState]);
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+  drawText(contextRef, textRef, width, color, isDrawing);
+
+  if (contextRef.current) {
+    snapshotRef.current = contextRef.current.getImageData(
+      0,
+      0,
+      canvasRef.current!.width,
+      canvasRef.current!.height
+    );
+  }
+
+  const startDrawing = (
+    e:
+      | React.MouseEvent<HTMLCanvasElement, MouseEvent>
+      | React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    const xCoord =
+      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientX ||
+      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientX;
+    const yCoord =
+      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientY ||
+      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientY;
+
+    drawText(contextRef, textRef, width, color, isDrawing);
+
     isDrawing.current = true;
 
     const canvas = canvasRef.current!;
     const ctx = contextRef.current!;
 
+    if (selectedTool === "Add Text") {
+      const textArea = document.createElement("textarea");
+      textArea.wrap = "off";
+      textArea.dir = "auto";
+      textArea.tabIndex = 0;
+      textArea.setAttribute(
+        "style",
+        `
+        position: absolute;
+        background: transparent;
+        left: ${xCoord}px; 
+        top: ${yCoord - +width * 5.5}px; 
+        opacity: ${+opacity / 100}; 
+        color: ${color}; 
+        font-size: ${+width * 6}px; 
+        height: ${+width * 8}px; 
+        width: ${window.innerWidth - xCoord}px; 
+        white-space: pre; 
+        margin: 0px; 
+        padding: 0px; 
+        border: none; 
+        outline: none; 
+        resize: none; 
+        overflow: hidden; 
+        word-break: normal;
+        white-space: pre;
+        overflow-wrap: break-word;
+        font-family: LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif;
+        box-sizing: content-box;`
+      );
+
+      textArea.oninput = (e) => {
+        textRef.current!.text = (e.target as HTMLTextAreaElement).value;
+      };
+      document.body.appendChild(textArea);
+      textRef.current = {
+        text: "",
+        x: xCoord,
+        y: yCoord,
+        textArea,
+      };
+      setTimeout(() => textArea.focus(), 0);
+    }
+
     if (selectedTool === "Add Image") {
       ctx.putImageData(snapshotRef.current!, 0, 0);
 
       const { img, width, height } = imageDataRef.current!;
-      ctx.drawImage(img, e.clientX, e.clientY, width, height);
+      ctx.drawImage(img, xCoord, yCoord, width, height);
       setState!("selectedTool", "Pencil");
+      imageDataRef.current = {
+        img: imageDataRef.current!.img,
+        width: 0,
+        height: 0,
+      };
     }
 
     if (selectedTool !== "Line" || isNewLine.current) {
       startingCords.current = {
-        x: e.clientX,
-        y: e.clientY,
+        x: xCoord,
+        y: yCoord,
       };
       ctx.beginPath();
     }
@@ -165,14 +250,28 @@ const Board = () => {
     draw(e);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+  const draw = (
+    e:
+      | React.MouseEvent<HTMLCanvasElement, MouseEvent>
+      | React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    const xCoord =
+      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientX ||
+      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientX;
+    const yCoord =
+      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientY ||
+      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientY;
+
     const ctx = contextRef.current!;
 
     if (selectedTool === "Add Image") {
       ctx.putImageData(snapshotRef.current!, 0, 0);
 
       const { img, width, height } = imageDataRef.current!;
-      ctx.drawImage(img, e.clientX, e.clientY, width, height);
+
+      if (img) {
+        ctx.drawImage(img, xCoord, yCoord, width, height);
+      }
       return;
     }
 
@@ -185,47 +284,54 @@ const Board = () => {
       case "Line":
       case "Pencil":
       case "Eraser":
-        ctx.lineTo(e.clientX, e.clientY);
+        ctx.lineTo(xCoord, yCoord);
         ctx.stroke();
         break;
 
       case "Rectangle":
         // TODO: Need to check for differnt stroke color
-        drawRectangle(ctx, x, y, e.clientX, e.clientY, backgroundColor);
+        drawRectangle(ctx, x, y, xCoord, yCoord, backgroundColor);
         break;
 
       case "Circle":
-        drawCircle(ctx, x, y, e.clientX, e.clientY);
+        drawCircle(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
       case "Diamond":
-        drawDiamond(ctx, x, y, e.clientX, e.clientY);
+        drawDiamond(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
       case "Triangle":
-        drawTriangle(ctx, x, y, e.clientX, e.clientY);
+        drawTriangle(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
       case "Arrow":
-        drawArrow(ctx, x, y, e.clientX, e.clientY);
+        drawArrow(ctx, x, y, xCoord, yCoord);
         break;
 
-      // case "Add Text":
+      // case "Add Text": // font family // font size // text getting removed when state is changing on click of panels
       // undo redo
       // remove unwanted options from side panel
+      // image size change
+      // all content size and position change
     }
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      onMouseDown={startDrawing}
-      onMouseUp={() => (isDrawing.current = false)}
-      onMouseMove={draw}
-    ></canvas>
+    <>
+      <canvas
+        ref={canvasRef}
+        onMouseDown={startDrawing}
+        onMouseUp={() => (isDrawing.current = false)}
+        onMouseMove={draw}
+        onTouchStart={startDrawing}
+        onTouchEnd={() => (isDrawing.current = false)}
+        onTouchMove={draw}
+      ></canvas>
+    </>
   );
 };
 
