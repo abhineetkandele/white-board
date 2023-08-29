@@ -2,7 +2,14 @@ import { sidePanelConfig } from "../Config/SidePanel";
 import Range from "./Range";
 import Selector from "./Selector";
 import Toggle from "./Toggle";
-import { ConfigRootType, ConfigType, SectionType } from "../types/types";
+import {
+  ConfigRootType,
+  ConfigType,
+  InitialStateType,
+  SectionType,
+} from "../types/types";
+import { useContext } from "react";
+import { AppContext } from "../context";
 
 const sectionTypes: {
   selector: SectionType;
@@ -15,6 +22,8 @@ const sectionTypes: {
 };
 
 const SidePanel = () => {
+  const { selectedTool }: InitialStateType = useContext(AppContext);
+
   return (
     <div className="panel-container side">
       {sidePanelConfig.map(
@@ -25,6 +34,7 @@ const SidePanel = () => {
           config,
           min,
           max,
+          excludedOptions,
         }: {
           id: string;
           label: string;
@@ -32,8 +42,11 @@ const SidePanel = () => {
           config?: ConfigType[];
           min?: number | undefined;
           max?: number | undefined;
+          excludedOptions: Array<string>;
         }) => {
           const Section = sectionTypes[type as ConfigRootType];
+
+          if (excludedOptions.includes(selectedTool)) return;
 
           return (
             <div className="section" key={id}>

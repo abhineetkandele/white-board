@@ -11,55 +11,70 @@ import Pencil from "../assets/pencil.svg";
 import Eraser from "../assets/eraser.svg";
 import AddText from "../assets/text.svg";
 
+export const TOP_PANEL_OPTIONS = {
+  RECTANGLE: "Rectangle",
+  CIRCLE: "Circle",
+  DIAMOND: "Diamond",
+  TRIANGLE: "Triangle",
+  LINE: "Line",
+  ARROW: "Arrow",
+  ADD_TEXT: "Add Text",
+  PENCIL: "Pencil",
+  ERASER: "Eraser",
+  ADD_IMAGE: "Add Image",
+  DOWNLOAD: "Download",
+  CLEAR: "Clear",
+};
+
 export const panelIcons = [
   {
     src: Rectagle,
-    title: "Rectangle",
+    title: TOP_PANEL_OPTIONS.RECTANGLE,
   },
   {
     src: Circle,
-    title: "Circle",
+    title: TOP_PANEL_OPTIONS.CIRCLE,
   },
   {
     src: Diamond,
-    title: "Diamond",
+    title: TOP_PANEL_OPTIONS.DIAMOND,
   },
   {
     src: Triangle,
-    title: "Triangle",
+    title: TOP_PANEL_OPTIONS.TRIANGLE,
   },
   {
     src: Line,
-    title: "Line",
+    title: TOP_PANEL_OPTIONS.LINE,
   },
   {
     src: Arrow,
-    title: "Arrow",
+    title: TOP_PANEL_OPTIONS.ARROW,
   },
   {
     src: AddText,
-    title: "Add Text",
+    title: TOP_PANEL_OPTIONS.ADD_TEXT,
   },
   {
     src: Pencil,
-    title: "Pencil",
+    title: TOP_PANEL_OPTIONS.PENCIL,
   },
   {
     src: Eraser,
-    title: "Eraser",
+    title: TOP_PANEL_OPTIONS.ERASER,
   },
   { key: "separator1" },
   {
     src: Image,
-    title: "Add Image",
+    title: TOP_PANEL_OPTIONS.ADD_IMAGE,
   },
   { key: "separator2" },
   {
     src: Download,
-    title: "Download",
+    title: TOP_PANEL_OPTIONS.DOWNLOAD,
   },
   {
     src: Trash,
-    title: "Clear",
+    title: TOP_PANEL_OPTIONS.CLEAR,
   },
 ];

@@ -1,3 +1,5 @@
+import { TRANSPARENT } from "./SidePanel";
+
 export const drawArrow = (
   context: CanvasRenderingContext2D,
   x1: number,
@@ -65,7 +67,6 @@ export const drawCircle = (
   y2: number
 ) => {
   context.beginPath();
-  // eslint-disable-next-line no-case-declarations
   const radius = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
   context.arc(x1, y1, radius, 0, 2 * Math.PI);
 };
@@ -78,7 +79,7 @@ export const drawRectangle = (
   y2: number,
   backgroundColor: string
 ) => {
-  if (backgroundColor === "transparent") {
+  if (backgroundColor === TRANSPARENT) {
     context.strokeRect(x1, y1, x2 - x1, y2 - y1);
   } else {
     context.fillRect(x1, y1, x2 - x1, y2 - y1);
@@ -90,7 +91,7 @@ export const drawShape = (
   context: CanvasRenderingContext2D,
   backgroundColor: string
 ) => {
-  if (backgroundColor === "transparent") {
+  if (backgroundColor === TRANSPARENT) {
     context.stroke();
   } else {
     context.fill();
@@ -102,33 +103,90 @@ export const drawText = (
   contextRef: React.MutableRefObject<
     CanvasRenderingContext2D | null | undefined
   >,
-  textRef: React.MutableRefObject<
-    | {
-        text: string;
-        x: number;
-        y: number;
-        textArea: HTMLTextAreaElement | null;
-      }
-    | undefined
-  >,
-  width: string,
+  x: number,
+  y: number,
+  value: string,
+  textArea: HTMLTextAreaElement,
+  width: number,
   color: string,
   isDrawing: { current: boolean } | undefined
 ) => {
-  if (textRef.current?.textArea) {
-    const { text, x, y, textArea } = textRef.current;
-    textArea?.remove();
+  textArea?.remove();
 
-    const ctx = contextRef.current!;
-    if (text) {
-      ctx.font = `${
-        +width * 6
-      }px LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif`;
-      ctx.fillStyle = color;
-      ctx.fillText(text, x, y);
+  const ctx = contextRef.current!;
+  if (value) {
+    ctx.font = `${
+      width * 6
+    }px LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif`;
+    ctx.fillStyle = color;
 
-      textRef.current.text = "";
-      isDrawing!.current = false;
-    }
+    const lines = value.split("\n");
+    for (let i = 0; i < lines.length; i++)
+      ctx.fillText(lines[i], x, y + i * width * 5);
+
+    isDrawing!.current = false;
   }
+};
+
+export const handleAddText = (
+  xCoord: number,
+  yCoord: number,
+  width: number,
+  opacity: number,
+  color: string,
+  contextRef: React.MutableRefObject<
+    CanvasRenderingContext2D | null | undefined
+  >,
+  isDrawing: { current: boolean } | undefined
+) => {
+  const textArea = document.createElement("textarea");
+  textArea.wrap = "off";
+  textArea.dir = "auto";
+  textArea.tabIndex = 0;
+  textArea.setAttribute(
+    "style",
+    `
+        position: absolute;
+        background: transparent;
+        left: ${xCoord}px;
+        top: ${yCoord - width * 5.5}px;
+        opacity: ${opacity / 100};
+        color: ${color};
+        font-size: ${width * 6}px;
+        height: ${width * 10}px;
+        max-width: ${window.innerWidth - xCoord}px;
+        white-space: pre;
+        margin: 0px;
+        padding: 0px;
+        border: none;
+        outline: none;
+        resize: none;
+        overflow: hidden;
+        word-break: normal;
+        width: 20px;
+        white-space: pre;
+        backface-visibility: hidden;
+        overflow-wrap: break-word;
+        font-family: LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif;
+        box-sizing: content-box;`
+  );
+
+  textArea.oninput = () => {
+    textArea.style.width = textArea.scrollWidth + "px";
+  };
+
+  textArea.onblur = (e) => {
+    drawText(
+      contextRef,
+      xCoord,
+      yCoord,
+      (e.target as HTMLTextAreaElement).value,
+      textArea,
+      width,
+      color,
+      isDrawing
+    );
+  };
+  document.body.appendChild(textArea);
+  setTimeout(() => textArea.focus(), 0);
 };

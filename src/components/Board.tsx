@@ -7,9 +7,25 @@ import {
   drawDiamond,
   drawRectangle,
   drawShape,
-  drawText,
   drawTriangle,
+  handleAddText,
 } from "../Config/canvasUtils";
+import { TOP_PANEL_OPTIONS } from "../Config/TopPanel";
+
+const {
+  RECTANGLE,
+  TRIANGLE,
+  CIRCLE,
+  DIAMOND,
+  DOWNLOAD,
+  LINE,
+  ARROW,
+  ADD_IMAGE,
+  ADD_TEXT,
+  PENCIL,
+  ERASER,
+  CLEAR,
+} = TOP_PANEL_OPTIONS;
 
 const Board = () => {
   const {
@@ -32,12 +48,6 @@ const Board = () => {
     img: HTMLImageElement;
     width: number;
     height: number;
-  }>();
-  const textRef = useRef<{
-    text: string;
-    x: number;
-    y: number;
-    textArea: HTMLTextAreaElement | null;
   }>();
 
   useEffect(() => {
@@ -66,7 +76,7 @@ const Board = () => {
     const ctx = contextRef.current!;
     let input: HTMLInputElement;
 
-    const resetSelection = () => setState!("selectedTool", "Pencil");
+    const resetSelection = () => setState!("selectedTool", PENCIL);
 
     const loadImage = (e: Event) => {
       const img = new Image();
@@ -95,19 +105,19 @@ const Board = () => {
       img.src = URL.createObjectURL(target.files?.[0] as Blob);
     };
 
-    if (selectedTool === "Clear") {
+    if (selectedTool === CLEAR) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       resetSelection();
-    } else if (selectedTool === "Download") {
+    } else if (selectedTool === DOWNLOAD) {
       const link = document.createElement("a");
       link.download = `${Date.now()}.jpg`;
       link.href = canvas.toDataURL();
       link.click();
       resetSelection();
       link.remove();
-    } else if (selectedTool === "Add Image") {
+    } else if (selectedTool === ADD_IMAGE) {
       input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";
@@ -124,22 +134,12 @@ const Board = () => {
     };
   }, [selectedTool, setState]);
 
-  drawText(contextRef, textRef, width, color, isDrawing);
-
-  if (contextRef.current) {
-    snapshotRef.current = contextRef.current.getImageData(
-      0,
-      0,
-      canvasRef.current!.width,
-      canvasRef.current!.height
-    );
-  }
-
   const startDrawing = (
     e:
       | React.MouseEvent<HTMLCanvasElement, MouseEvent>
       | React.TouchEvent<HTMLCanvasElement>
   ) => {
+    e.stopPropagation();
     const xCoord =
       (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientX ||
       (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientX;
@@ -147,88 +147,21 @@ const Board = () => {
       (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientY ||
       (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientY;
 
-    drawText(contextRef, textRef, width, color, isDrawing);
-
     isDrawing.current = true;
 
     const canvas = canvasRef.current!;
     const ctx = contextRef.current!;
 
-    if (selectedTool === "Add Text") {
-      const textArea = document.createElement("textarea");
-      textArea.wrap = "off";
-      textArea.dir = "auto";
-      textArea.tabIndex = 0;
-      textArea.setAttribute(
-        "style",
-        `
-        position: absolute;
-        background: transparent;
-        left: ${xCoord}px; 
-        top: ${yCoord - +width * 5.5}px; 
-        opacity: ${+opacity / 100}; 
-        color: ${color}; 
-        font-size: ${+width * 6}px; 
-        height: ${+width * 8}px; 
-        width: ${window.innerWidth - xCoord}px; 
-        white-space: pre; 
-        margin: 0px; 
-        padding: 0px; 
-        border: none; 
-        outline: none; 
-        resize: none; 
-        overflow: hidden; 
-        word-break: normal;
-        white-space: pre;
-        overflow-wrap: break-word;
-        font-family: LatoWeb, Helvetica Neue, Helvetica, Arial, sans-serif;
-        box-sizing: content-box;`
+    if (selectedTool === ADD_TEXT) {
+      handleAddText(
+        xCoord,
+        yCoord,
+        +width,
+        +opacity,
+        color,
+        contextRef,
+        isDrawing
       );
-
-      textArea.oninput = (e) => {
-        textRef.current!.text = (e.target as HTMLTextAreaElement).value;
-      };
-      document.body.appendChild(textArea);
-      textRef.current = {
-        text: "",
-        x: xCoord,
-        y: yCoord,
-        textArea,
-      };
-      setTimeout(() => textArea.focus(), 0);
-    }
-
-    if (selectedTool === "Add Image") {
-      ctx.putImageData(snapshotRef.current!, 0, 0);
-
-      const { img, width, height } = imageDataRef.current!;
-      ctx.drawImage(img, xCoord, yCoord, width, height);
-      setState!("selectedTool", "Pencil");
-      imageDataRef.current = {
-        img: imageDataRef.current!.img,
-        width: 0,
-        height: 0,
-      };
-    }
-
-    if (selectedTool !== "Line" || isNewLine.current) {
-      startingCords.current = {
-        x: xCoord,
-        y: yCoord,
-      };
-      ctx.beginPath();
-    }
-
-    if (selectedTool === "Line") {
-      isNewLine.current = false;
-    } else {
-      isNewLine.current = true;
-    }
-
-    if (selectedTool !== "Eraser") {
-      ctx.globalCompositeOperation = "source-over";
-    } else {
-      ctx.globalCompositeOperation = "destination-out";
     }
 
     ctx.fillStyle = backgroundColor;
@@ -244,6 +177,41 @@ const Board = () => {
       ctx.setLineDash([1, 15]);
     } else {
       ctx.setLineDash([]);
+    }
+
+    if (selectedTool === ADD_IMAGE && imageDataRef.current) {
+      ctx.putImageData(snapshotRef.current!, 0, 0);
+
+      const { img, width, height } = imageDataRef.current;
+      ctx.drawImage(img, xCoord, yCoord, width, height);
+      setState!("selectedTool", PENCIL);
+      imageDataRef.current = {
+        img: imageDataRef.current!.img,
+        width: 0,
+        height: 0,
+      };
+    }
+
+    if (selectedTool !== LINE || isNewLine.current) {
+      startingCords.current = {
+        x: xCoord,
+        y: yCoord,
+      };
+      ctx.beginPath();
+    }
+
+    if (selectedTool === LINE) {
+      isNewLine.current = false;
+    } else {
+      isNewLine.current = true;
+    }
+
+    if (selectedTool !== ERASER) {
+      ctx.globalCompositeOperation = "source-over";
+    } else {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
     }
 
     snapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -264,12 +232,13 @@ const Board = () => {
 
     const ctx = contextRef.current!;
 
-    if (selectedTool === "Add Image") {
+    if (selectedTool === ADD_IMAGE && imageDataRef.current) {
       ctx.putImageData(snapshotRef.current!, 0, 0);
 
-      const { img, width, height } = imageDataRef.current!;
+      const { img, width, height } = imageDataRef.current;
 
       if (img) {
+        ctx.globalAlpha = +opacity / 100;
         ctx.drawImage(img, xCoord, yCoord, width, height);
       }
       return;
@@ -281,42 +250,44 @@ const Board = () => {
     const { x, y } = startingCords.current!;
 
     switch (selectedTool) {
-      case "Line":
-      case "Pencil":
-      case "Eraser":
+      case LINE:
+      case PENCIL:
+      case ERASER:
         ctx.lineTo(xCoord, yCoord);
         ctx.stroke();
         break;
 
-      case "Rectangle":
+      case RECTANGLE:
         // TODO: Need to check for differnt stroke color
         drawRectangle(ctx, x, y, xCoord, yCoord, backgroundColor);
         break;
 
-      case "Circle":
+      case CIRCLE:
         drawCircle(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
-      case "Diamond":
+      case DIAMOND:
         drawDiamond(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
-      case "Triangle":
+      case TRIANGLE:
         drawTriangle(ctx, x, y, xCoord, yCoord);
         drawShape(ctx, backgroundColor);
         break;
 
-      case "Arrow":
+      case ARROW:
         drawArrow(ctx, x, y, xCoord, yCoord);
         break;
 
-      // case "Add Text": // font family // font size // text getting removed when state is changing on click of panels
+      // case "Add Text": // font family
       // undo redo
-      // remove unwanted options from side panel
       // image size change
       // all content size and position change
+      // in mobile content is not visible when drawn but visible when downloaded
+      // when changing canvas size when some element are there, element are losing their aspect ratio
+      // switching from eraser to image, making it opaque
     }
   };
 

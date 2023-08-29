@@ -1,12 +1,17 @@
 import Line from "../assets/line.svg";
 import LineDashed from "../assets/line-dashed.svg";
 import LineDotted from "../assets/line-dotted.svg";
+import { TOP_PANEL_OPTIONS } from "./TopPanel";
+
+const { ERASER, PENCIL, ADD_TEXT, ARROW, LINE } = TOP_PANEL_OPTIONS;
 
 const icons = {
   line: Line,
   "line-dashed": LineDashed,
   "line-dotted": LineDotted,
 };
+
+export const TRANSPARENT = "transparent";
 
 export const COLOR_PICKER = "color-picker";
 
@@ -36,6 +41,7 @@ export const sidePanelConfig = [
         color: COLOR_PICKER,
       },
     ],
+    excludedOptions: [ERASER],
   },
   {
     id: "backgroundColor",
@@ -43,7 +49,7 @@ export const sidePanelConfig = [
     type: "selector",
     config: [
       {
-        color: "transparent",
+        color: TRANSPARENT,
       },
       {
         color: "#ffc9c9",
@@ -62,6 +68,7 @@ export const sidePanelConfig = [
         color: COLOR_PICKER,
       },
     ],
+    excludedOptions: [ERASER, PENCIL, ADD_TEXT, ARROW, LINE],
   },
   {
     id: "width",
@@ -69,6 +76,7 @@ export const sidePanelConfig = [
     type: "range",
     min: 1,
     max: 15,
+    excludedOptions: [],
   },
   {
     id: "strokeStyle",
@@ -88,6 +96,7 @@ export const sidePanelConfig = [
         title: "Dotted",
       },
     ],
+    excludedOptions: [ERASER, ADD_TEXT],
   },
   {
     id: "opacity",
@@ -95,5 +104,6 @@ export const sidePanelConfig = [
     type: "range",
     min: 0,
     max: 100,
+    excludedOptions: [ERASER],
   },
 ];
