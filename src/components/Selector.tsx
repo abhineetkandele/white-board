@@ -1,15 +1,10 @@
 import { useContext } from "react";
-import {
-  ConfigObjType,
-  InitialStateType,
-  PropsType,
-  StateType,
-} from "../types/types";
+import { ConfigObjType, PropsType, StateType } from "../types/types";
 import { AppContext } from "../context";
 import { COLOR_PICKER } from "../Config/SidePanel";
 
 const Selector = ({ config, id }: PropsType) => {
-  const { setState, ...state }: InitialStateType = useContext(AppContext);
+  const [state, setState] = useContext(AppContext);
 
   const value = state[id as keyof StateType];
 
@@ -28,7 +23,7 @@ const Selector = ({ config, id }: PropsType) => {
               <input
                 type="color"
                 id={`${id}-color-picker`}
-                onChange={(e) => setState!(id, e.target.value)}
+                onChange={(e) => setState({ [id]: e.target.value })}
               />
             </div>
           ) : (
@@ -38,7 +33,7 @@ const Selector = ({ config, id }: PropsType) => {
               style={{ backgroundColor: color }}
               title={color}
               type="button"
-              onClick={() => setState!(id, color)}
+              onClick={() => setState({ [id]: color })}
             />
           );
         } else if (icon) {
@@ -51,7 +46,7 @@ const Selector = ({ config, id }: PropsType) => {
               className={`tools ${title === value && "selected"}`}
               role="button"
               tabIndex={0}
-              onClick={() => setState!(id, title!)}
+              onClick={() => setState({ [id]: title })}
             />
           );
         } else {

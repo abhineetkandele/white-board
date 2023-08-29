@@ -2,12 +2,7 @@ import { sidePanelConfig } from "../Config/SidePanel";
 import Range from "./Range";
 import Selector from "./Selector";
 import Toggle from "./Toggle";
-import {
-  ConfigRootType,
-  ConfigType,
-  InitialStateType,
-  SectionType,
-} from "../types/types";
+import { ConfigRootType, ConfigType, SectionType } from "../types/types";
 import { useContext } from "react";
 import { AppContext } from "../context";
 
@@ -22,7 +17,7 @@ const sectionTypes: {
 };
 
 const SidePanel = () => {
-  const { selectedTool }: InitialStateType = useContext(AppContext);
+  const [{ selectedTool }] = useContext(AppContext);
 
   return (
     <div className="panel-container side">

@@ -1,10 +1,9 @@
 import { useContext } from "react";
 import { panelIcons } from "../Config/TopPanel";
-import { InitialStateType } from "../types/types";
 import { AppContext } from "../context";
 
 const TopPanel = () => {
-  const { selectedTool, setState }: InitialStateType = useContext(AppContext);
+  const [{ selectedTool }, setState] = useContext(AppContext);
 
   return (
     <div className="panel-container top">
@@ -20,7 +19,7 @@ const TopPanel = () => {
             className={`tools ${title === selectedTool && "selected"}`}
             role="button"
             tabIndex={0}
-            onClick={() => setState!("selectedTool", title!)}
+            onClick={() => setState({ selectedTool: title })}
           />
         );
       })}

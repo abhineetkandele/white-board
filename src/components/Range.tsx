@@ -1,9 +1,9 @@
 import { useContext } from "react";
-import { InitialStateType, PropsType, StateType } from "../types/types";
+import { PropsType, StateType } from "../types/types";
 import { AppContext } from "../context";
 
 const Range = ({ id, min, max }: PropsType) => {
-  const { setState, ...state }: InitialStateType = useContext(AppContext);
+  const [state, setState] = useContext(AppContext);
 
   const value = state[id as keyof StateType];
 
@@ -14,7 +14,7 @@ const Range = ({ id, min, max }: PropsType) => {
         max={max}
         min={min}
         id={id}
-        onChange={(e) => setState!(id, e.target.value)}
+        onChange={(e) => setState({ [id]: e.target.valueAsNumber })}
         value={value as string}
       />
     </div>

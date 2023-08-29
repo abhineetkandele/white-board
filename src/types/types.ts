@@ -1,3 +1,5 @@
+import React from "react";
+
 export type ConfigRootType = "selector" | "toggle" | "range";
 
 export type ConfigType =
@@ -26,17 +28,15 @@ export type StateType = {
   selectedTool: string;
   color: string;
   backgroundColor: string;
-  width: string;
+  width: number;
   strokeStyle: string;
-  opacity: string;
+  opacity: number;
 };
 
-export type InitialStateType = {
-  selectedTool: string;
-  color: string;
-  backgroundColor: string;
-  width: string;
-  strokeStyle: string;
-  opacity: string;
-  setState?: (id: string, value: string | boolean) => void;
-};
+export type Store = [StateType, (value: Partial<StateType>) => void];
+
+export type TouchEventType = React.TouchEvent<HTMLCanvasElement>;
+
+export type MouseEventType = React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+
+export type TouchMouseEventType = MouseEventType | TouchEventType;

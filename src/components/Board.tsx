@@ -1,5 +1,4 @@
 import { useContext, useEffect, useRef } from "react";
-import { InitialStateType } from "../types/types";
 import { AppContext } from "../context";
 import {
   drawArrow,
@@ -11,6 +10,8 @@ import {
   handleAddText,
 } from "../Config/canvasUtils";
 import { TOP_PANEL_OPTIONS } from "../Config/TopPanel";
+import { TouchMouseEventType } from "../types/types";
+import { getCords, loadImage } from "../Config/utils";
 
 const {
   RECTANGLE,
@@ -28,15 +29,10 @@ const {
 } = TOP_PANEL_OPTIONS;
 
 const Board = () => {
-  const {
+  const [
+    { selectedTool, color, backgroundColor, width, strokeStyle, opacity },
     setState,
-    selectedTool,
-    color,
-    backgroundColor,
-    width,
-    strokeStyle,
-    opacity,
-  }: InitialStateType = useContext(AppContext);
+  ] = useContext(AppContext);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>();
@@ -76,33 +72,23 @@ const Board = () => {
     const ctx = contextRef.current!;
     let input: HTMLInputElement;
 
-    const resetSelection = () => setState!("selectedTool", PENCIL);
+    const resetSelection = () => setState({ selectedTool: PENCIL });
 
-    const loadImage = (e: Event) => {
-      const img = new Image();
-      const target = e.target as HTMLInputElement;
-
-      img.onload = function () {
-        const imgWidth = img.naturalWidth;
-        const imgHeight = img.naturalHeight;
-
-        const aspectRatio = imgWidth / imgHeight;
-        const width = 200;
-        const height = width / aspectRatio;
-
-        imageDataRef.current = {
-          img,
-          width,
-          height,
-        };
-        snapshotRef.current = ctx.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+    const handleLoadedImage = (
+      img: HTMLImageElement,
+      width: number,
+      height: number
+    ) => {
+      imageDataRef.current = {
+        img,
+        width,
+        height,
       };
-      img.src = URL.createObjectURL(target.files?.[0] as Blob);
+      snapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    };
+
+    const handleInputChange = (e: Event) => {
+      loadImage(e, handleLoadedImage);
     };
 
     if (selectedTool === CLEAR) {
@@ -123,29 +109,20 @@ const Board = () => {
       input.accept = "image/*";
       input.click();
 
-      input.addEventListener("change", loadImage);
+      input.addEventListener("change", handleInputChange);
       input.addEventListener("cancel", resetSelection);
       input.remove();
     }
 
     return () => {
-      input?.removeEventListener("change", loadImage);
+      input?.removeEventListener("change", handleInputChange);
       input?.removeEventListener("cancel", resetSelection);
     };
   }, [selectedTool, setState]);
 
-  const startDrawing = (
-    e:
-      | React.MouseEvent<HTMLCanvasElement, MouseEvent>
-      | React.TouchEvent<HTMLCanvasElement>
-  ) => {
+  const startDrawing = (e: TouchMouseEventType) => {
     e.stopPropagation();
-    const xCoord =
-      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientX ||
-      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientX;
-    const yCoord =
-      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientY ||
-      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientY;
+    const { xCoord, yCoord } = getCords(e);
 
     isDrawing.current = true;
 
@@ -156,8 +133,8 @@ const Board = () => {
       handleAddText(
         xCoord,
         yCoord,
-        +width,
-        +opacity,
+        width,
+        opacity,
         color,
         contextRef,
         isDrawing
@@ -165,11 +142,11 @@ const Board = () => {
     }
 
     ctx.fillStyle = backgroundColor;
-    ctx.strokeStyle = color; // TODO: Need to see stroke opacity
-    ctx.lineWidth = +width;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.globalAlpha = +opacity / 100;
+    ctx.globalAlpha = opacity / 100;
 
     if (strokeStyle === "Dashed") {
       ctx.setLineDash([10, 15]);
@@ -184,7 +161,7 @@ const Board = () => {
 
       const { img, width, height } = imageDataRef.current;
       ctx.drawImage(img, xCoord, yCoord, width, height);
-      setState!("selectedTool", PENCIL);
+      setState({ selectedTool: PENCIL });
       imageDataRef.current = {
         img: imageDataRef.current!.img,
         width: 0,
@@ -218,17 +195,8 @@ const Board = () => {
     draw(e);
   };
 
-  const draw = (
-    e:
-      | React.MouseEvent<HTMLCanvasElement, MouseEvent>
-      | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    const xCoord =
-      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientX ||
-      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientX;
-    const yCoord =
-      (e as React.MouseEvent<HTMLCanvasElement, MouseEvent>).clientY ||
-      (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0].clientY;
+  const draw = (e: TouchMouseEventType) => {
+    const { xCoord, yCoord } = getCords(e);
 
     const ctx = contextRef.current!;
 
@@ -238,7 +206,7 @@ const Board = () => {
       const { img, width, height } = imageDataRef.current;
 
       if (img) {
-        ctx.globalAlpha = +opacity / 100;
+        ctx.globalAlpha = opacity / 100;
         ctx.drawImage(img, xCoord, yCoord, width, height);
       }
       return;
@@ -258,7 +226,6 @@ const Board = () => {
         break;
 
       case RECTANGLE:
-        // TODO: Need to check for differnt stroke color
         drawRectangle(ctx, x, y, xCoord, yCoord, backgroundColor);
         break;
 
@@ -291,15 +258,19 @@ const Board = () => {
     }
   };
 
+  const endDrawing = () => {
+    isDrawing.current = false;
+  };
+
   return (
     <>
       <canvas
         ref={canvasRef}
         onMouseDown={startDrawing}
-        onMouseUp={() => (isDrawing.current = false)}
+        onMouseUp={endDrawing}
         onMouseMove={draw}
         onTouchStart={startDrawing}
-        onTouchEnd={() => (isDrawing.current = false)}
+        onTouchEnd={endDrawing}
         onTouchMove={draw}
       ></canvas>
     </>
