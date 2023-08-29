@@ -137,7 +137,8 @@ export const handleAddText = (
   contextRef: React.MutableRefObject<
     CanvasRenderingContext2D | null | undefined
   >,
-  isDrawing: { current: boolean } | undefined
+  isDrawing: { current: boolean } | undefined,
+  onTextDrawn = () => {}
 ) => {
   const textArea = document.createElement("textarea");
   textArea.wrap = "off";
@@ -186,6 +187,7 @@ export const handleAddText = (
       color,
       isDrawing
     );
+    onTextDrawn();
   };
   document.body.appendChild(textArea);
   setTimeout(() => textArea.focus(), 0);

@@ -11,7 +11,7 @@ import {
 } from "../Config/canvasUtils";
 import { TOP_PANEL_OPTIONS } from "../Config/TopPanel";
 import { TouchMouseEventType } from "../types/types";
-import { getCords, loadImage } from "../Config/utils";
+import { createIndexDBConnection, getCords, loadImage } from "../Config/utils";
 
 const {
   RECTANGLE,
@@ -45,6 +45,7 @@ const Board = () => {
     width: number;
     height: number;
   }>();
+  const indexDBRef = useRef<IDBDatabase>();
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -65,6 +66,24 @@ const Board = () => {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+
+    const request = createIndexDBConnection("white-board", "data", {
+      autoIncrement: true,
+    });
+
+    request!.onsuccess = (e) => {
+      indexDBRef.current = (e.target as IDBOpenDBRequest).result;
+
+      const tx = indexDBRef.current.transaction("data", "readonly");
+      const store = tx.objectStore("data");
+      const data = store.getAll();
+
+      data.onsuccess = () => {
+        if (data?.result[0]) {
+          ctx.putImageData(data.result[0], 0, 0);
+        }
+      };
+    };
   }, []);
 
   useEffect(() => {
@@ -120,6 +139,22 @@ const Board = () => {
     };
   }, [selectedTool, setState]);
 
+  const saveCanvasToDB = () => {
+    if (canvasRef.current && contextRef.current) {
+      const data = contextRef.current.getImageData(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+
+      const tx = indexDBRef.current!.transaction("data", "readwrite");
+      const store = tx.objectStore("data");
+      store.clear();
+      store.add(data);
+    }
+  };
+
   const startDrawing = (e: TouchMouseEventType) => {
     e.stopPropagation();
     const { xCoord, yCoord } = getCords(e);
@@ -137,7 +172,8 @@ const Board = () => {
         opacity,
         color,
         contextRef,
-        isDrawing
+        isDrawing,
+        saveCanvasToDB
       );
     }
 
@@ -255,11 +291,14 @@ const Board = () => {
       // in mobile content is not visible when drawn but visible when downloaded
       // when changing canvas size when some element are there, element are losing their aspect ratio
       // switching from eraser to image, making it opaque
+      // retain aspect ratio of canvas after resizing
+      // add theme light and dark
     }
   };
 
   const endDrawing = () => {
     isDrawing.current = false;
+    saveCanvasToDB();
   };
 
   return (
