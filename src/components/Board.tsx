@@ -86,6 +86,22 @@ const Board = () => {
     };
   }, []);
 
+  const saveCanvasToDB = () => {
+    if (canvasRef.current && contextRef.current) {
+      const data = contextRef.current.getImageData(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+
+      const tx = indexDBRef.current!.transaction("data", "readwrite");
+      const store = tx.objectStore("data");
+      store.clear();
+      store.add(data);
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = contextRef.current!;
@@ -115,6 +131,7 @@ const Board = () => {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       resetSelection();
+      saveCanvasToDB();
     } else if (selectedTool === DOWNLOAD) {
       const link = document.createElement("a");
       link.download = `${Date.now()}.jpg`;
@@ -138,22 +155,6 @@ const Board = () => {
       input?.removeEventListener("cancel", resetSelection);
     };
   }, [selectedTool, setState]);
-
-  const saveCanvasToDB = () => {
-    if (canvasRef.current && contextRef.current) {
-      const data = contextRef.current.getImageData(
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
-
-      const tx = indexDBRef.current!.transaction("data", "readwrite");
-      const store = tx.objectStore("data");
-      store.clear();
-      store.add(data);
-    }
-  };
 
   const startDrawing = (e: TouchMouseEventType) => {
     e.stopPropagation();
@@ -293,6 +294,7 @@ const Board = () => {
       // switching from eraser to image, making it opaque
       // retain aspect ratio of canvas after resizing
       // add theme light and dark
+      // check handleWheel for moving canvas
     }
   };
 
@@ -305,12 +307,9 @@ const Board = () => {
     <>
       <canvas
         ref={canvasRef}
-        onMouseDown={startDrawing}
-        onMouseUp={endDrawing}
-        onMouseMove={draw}
-        onTouchStart={startDrawing}
-        onTouchEnd={endDrawing}
-        onTouchMove={draw}
+        onPointerDown={startDrawing}
+        onPointerUp={endDrawing}
+        onPointerMove={draw}
       ></canvas>
     </>
   );
