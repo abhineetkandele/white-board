@@ -46,6 +46,7 @@ const Board = () => {
     height: number;
   }>();
   const indexDBRef = useRef<IDBDatabase>();
+  const countRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -103,6 +104,7 @@ const Board = () => {
   };
 
   useEffect(() => {
+    startingCords.current = undefined;
     const canvas = canvasRef.current!;
     const ctx = contextRef.current!;
     let input: HTMLInputElement;
@@ -156,7 +158,7 @@ const Board = () => {
     };
   }, [selectedTool, setState]);
 
-  const startDrawing = (e: TouchMouseEventType) => {
+  const onPointerDown = (e: TouchMouseEventType) => {
     e.stopPropagation();
     const { xCoord, yCoord } = getCords(e);
 
@@ -197,7 +199,7 @@ const Board = () => {
       ctx.putImageData(snapshotRef.current!, 0, 0);
 
       const { img, width, height } = imageDataRef.current;
-      ctx.drawImage(img, xCoord, yCoord, width, height);
+      ctx.drawImage(img, xCoord, yCoord, width * 3, height * 3);
       setState({ selectedTool: PENCIL });
       imageDataRef.current = {
         img: imageDataRef.current!.img,
@@ -215,7 +217,25 @@ const Board = () => {
     }
 
     if (selectedTool === LINE) {
+      countRef.current += 1;
       isNewLine.current = false;
+
+      ctx.lineTo(xCoord, yCoord);
+      ctx.stroke();
+      ctx.save();
+
+      const { x = Infinity, y = Infinity } = startingCords.current || {};
+      if (
+        Math.abs(x - xCoord) < 10 &&
+        Math.abs(y - yCoord) < 10 &&
+        countRef.current > 2
+      ) {
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        countRef.current = 0;
+        isNewLine.current = true;
+      }
     } else {
       isNewLine.current = true;
     }
@@ -229,10 +249,10 @@ const Board = () => {
     }
 
     snapshotRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    draw(e);
+    onPointerMove(e);
   };
 
-  const draw = (e: TouchMouseEventType) => {
+  const onPointerMove = (e: TouchMouseEventType) => {
     const { xCoord, yCoord } = getCords(e);
 
     const ctx = contextRef.current!;
@@ -255,30 +275,31 @@ const Board = () => {
     const { x, y } = startingCords.current!;
 
     switch (selectedTool) {
-      case LINE:
       case PENCIL:
       case ERASER:
+        if (x === xCoord && y === yCoord) {
+          ctx.lineTo(xCoord - 1, yCoord - 1);
+        }
         ctx.lineTo(xCoord, yCoord);
         ctx.stroke();
         break;
-
       case RECTANGLE:
-        drawRectangle(ctx, x, y, xCoord, yCoord, backgroundColor);
+        drawRectangle(ctx, x, y, xCoord, yCoord);
         break;
 
       case CIRCLE:
         drawCircle(ctx, x, y, xCoord, yCoord);
-        drawShape(ctx, backgroundColor);
+        drawShape(ctx);
         break;
 
       case DIAMOND:
         drawDiamond(ctx, x, y, xCoord, yCoord);
-        drawShape(ctx, backgroundColor);
+        drawShape(ctx);
         break;
 
       case TRIANGLE:
         drawTriangle(ctx, x, y, xCoord, yCoord);
-        drawShape(ctx, backgroundColor);
+        drawShape(ctx);
         break;
 
       case ARROW:
@@ -290,7 +311,6 @@ const Board = () => {
       // image size change
       // all content size and position change
       // in mobile content is not visible when drawn but visible when downloaded
-      // when changing canvas size when some element are there, element are losing their aspect ratio
       // switching from eraser to image, making it opaque
       // retain aspect ratio of canvas after resizing
       // add theme light and dark
@@ -298,7 +318,7 @@ const Board = () => {
     }
   };
 
-  const endDrawing = () => {
+  const onPointerUp = () => {
     isDrawing.current = false;
     saveCanvasToDB();
   };
@@ -307,9 +327,9 @@ const Board = () => {
     <>
       <canvas
         ref={canvasRef}
-        onPointerDown={startDrawing}
-        onPointerUp={endDrawing}
-        onPointerMove={draw}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerMove={onPointerMove}
       ></canvas>
     </>
   );

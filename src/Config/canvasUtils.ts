@@ -1,5 +1,3 @@
-import { TRANSPARENT } from "./SidePanel";
-
 export const drawArrow = (
   context: CanvasRenderingContext2D,
   x1: number,
@@ -76,27 +74,15 @@ export const drawRectangle = (
   x1: number,
   y1: number,
   x2: number,
-  y2: number,
-  backgroundColor: string
+  y2: number
 ) => {
-  if (backgroundColor === TRANSPARENT) {
-    context.strokeRect(x1, y1, x2 - x1, y2 - y1);
-  } else {
-    context.fillRect(x1, y1, x2 - x1, y2 - y1);
-    context.strokeRect(x1, y1, x2 - x1, y2 - y1);
-  }
+  context.fillRect(x1, y1, x2 - x1, y2 - y1);
+  context.strokeRect(x1, y1, x2 - x1, y2 - y1);
 };
 
-export const drawShape = (
-  context: CanvasRenderingContext2D,
-  backgroundColor: string
-) => {
-  if (backgroundColor === TRANSPARENT) {
-    context.stroke();
-  } else {
-    context.fill();
-    context.stroke();
-  }
+export const drawShape = (context: CanvasRenderingContext2D) => {
+  context.fill();
+  context.stroke();
 };
 
 export const drawText = (

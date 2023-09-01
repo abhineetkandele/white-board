@@ -3,7 +3,7 @@ import LineDashed from "../assets/line-dashed.svg";
 import LineDotted from "../assets/line-dotted.svg";
 import { TOP_PANEL_OPTIONS } from "./TopPanel";
 
-const { ERASER, PENCIL, ADD_TEXT, ARROW, LINE } = TOP_PANEL_OPTIONS;
+const { ERASER, PENCIL, ADD_TEXT, ARROW } = TOP_PANEL_OPTIONS;
 
 const icons = {
   line: Line,
@@ -68,7 +68,7 @@ export const sidePanelConfig = [
         color: COLOR_PICKER,
       },
     ],
-    excludedOptions: [ERASER, PENCIL, ADD_TEXT, ARROW, LINE],
+    excludedOptions: [ERASER, PENCIL, ADD_TEXT, ARROW],
   },
   {
     id: "width",
