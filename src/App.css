@@ -150,4 +150,5 @@
 canvas {
   height: 98%;
   width: 100%;
+  touch-action: none;
 }
